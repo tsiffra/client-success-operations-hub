@@ -4,7 +4,10 @@ import {
   countBy,
   healthLabel,
   healthScore,
+  isHighPriority,
+  isOpenStatus,
   isRenewalSoon,
+  isResolvedStatus,
   recommendedNextAction,
   slaStatus
 } from './domain.js';
@@ -187,7 +190,7 @@ app.patch('/api/tickets/:id', (req, res) => {
     ? req.body.internal_notes
     : existing.internal_notes;
   const now = new Date().toISOString();
-  const closedAt = ['resolved', 'closed'].includes(status)
+  const closedAt = isResolvedStatus(status)
     ? existing.closed_at || now
     : null;
 
@@ -228,9 +231,9 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/dashboard', (_req, res) => {
   const tickets = allTicketsForMetrics();
   const total = tickets.length;
-  const highPriority = tickets.filter((ticket) => ['high', 'critical'].includes(ticket.priority.toLowerCase())).length;
-  const open = tickets.filter((ticket) => ['open', 'in_progress'].includes(ticket.status)).length;
-  const resolved = tickets.filter((ticket) => ['resolved', 'closed'].includes(ticket.status)).length;
+  const highPriority = tickets.filter((ticket) => isHighPriority(ticket.priority)).length;
+  const open = tickets.filter((ticket) => isOpenStatus(ticket.status)).length;
+  const resolved = tickets.filter((ticket) => isResolvedStatus(ticket.status)).length;
 
   res.json({
     totalTickets: total,
@@ -243,7 +246,7 @@ app.get('/api/dashboard', (_req, res) => {
     actionCenter: [
       {
         label: 'Overdue high-priority tickets',
-        count: tickets.filter((ticket) => ticket.sla_status === 'overdue' && ['high', 'critical'].includes(ticket.priority.toLowerCase())).length,
+        count: tickets.filter((ticket) => ticket.sla_status === 'overdue' && isHighPriority(ticket.priority)).length,
         explanation: 'Urgent customer-impacting work is already outside SLA.',
         severity: 'danger'
       },
@@ -261,7 +264,7 @@ app.get('/api/dashboard', (_req, res) => {
       },
       {
         label: 'Unresolved high-priority tickets',
-        count: tickets.filter((ticket) => ['high', 'critical'].includes(ticket.priority.toLowerCase()) && !['resolved', 'closed'].includes(ticket.status)).length,
+        count: tickets.filter((ticket) => isHighPriority(ticket.priority) && !isResolvedStatus(ticket.status)).length,
         explanation: 'High-priority tickets still open or in progress.',
         severity: 'info'
       }
@@ -336,5 +339,3 @@ app.get('/api/companies/:id', (req, res) => {
 app.listen(port, () => {
   console.log(`API server running at http://127.0.0.1:${port}`);
 });
-
-setInterval(() => {}, 60 * 60 * 1000);

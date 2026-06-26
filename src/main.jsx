@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
+const ticketStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+
 const navItems = [
   ['dashboard', 'Dashboard', '◆'],
   ['tickets', 'Tickets', '▣'],
@@ -44,7 +46,9 @@ function App() {
         <nav>
           {navItems.map(([key, label, icon]) => (
             <button
+              type="button"
               className={page === key ? 'active' : ''}
+              aria-current={page === key ? 'page' : undefined}
               key={key}
               onClick={() => setPage(key)}
             >
@@ -99,7 +103,7 @@ function useApi(path) {
 function PageState({ loading, error }) {
   if (loading) {
     return (
-      <div className="state-card">
+      <div className="state-card" role="status" aria-live="polite">
         <div className="loader" />
         <strong>Loading data</strong>
         <p>Fetching the latest support operations view.</p>
@@ -108,7 +112,7 @@ function PageState({ loading, error }) {
   }
   if (error) {
     return (
-      <div className="state-card error-state">
+      <div className="state-card error-state" role="alert">
         <strong>Unable to load this view</strong>
         <p>{error}</p>
       </div>
@@ -226,11 +230,12 @@ function TicketTable({ tickets, onOpenTicket, showCompany = false }) {
             <th>Owner</th>
             <th>Status</th>
             <th>SLA</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
           {tickets.map((ticket) => (
-            <tr key={ticket.id} onClick={() => onOpenTicket(ticket.id)}>
+            <tr key={ticket.id}>
               <td>
                 <strong>{ticket.subject}</strong>
                 <span>External #{ticket.external_id} · {ticket.type} · {ticket.language}</span>
@@ -241,6 +246,11 @@ function TicketTable({ tickets, onOpenTicket, showCompany = false }) {
               <td>{ticket.owner}</td>
               <td><StatusBadge value={ticket.status} /></td>
               <td><SlaBadge value={ticket.sla_status} /></td>
+              <td>
+                <button type="button" className="row-action" onClick={() => onOpenTicket(ticket.id)}>
+                  Open
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -280,7 +290,7 @@ function TicketDetail({ id, onBack }) {
 
   return (
     <section>
-      <button className="text-button" onClick={onBack}>← Back to tickets</button>
+      <button type="button" className="text-button" onClick={onBack}>← Back to tickets</button>
       <PageHeader
         eyebrow={`Ticket #${data.external_id}`}
         title={data.subject}
@@ -318,7 +328,7 @@ function TicketDetail({ id, onBack }) {
           <label>
             Status
             <select value={status} onChange={(event) => setStatus(event.target.value)}>
-              {['open', 'in_progress', 'resolved', 'closed'].map((option) => (
+              {ticketStatuses.map((option) => (
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
@@ -331,7 +341,7 @@ function TicketDetail({ id, onBack }) {
               placeholder="Add triage notes, customer context, or implementation follow-up."
             />
           </label>
-          <button className="primary-button" onClick={saveTicket} disabled={saving}>
+          <button type="button" className="primary-button" onClick={saveTicket} disabled={saving}>
             {saving ? 'Saving...' : 'Save ticket'}
           </button>
         </aside>
@@ -370,11 +380,12 @@ function Customers({ onOpenCompany }) {
               <th>Business type</th>
               <th>Total tickets</th>
               <th>Health</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {data.companies.map((company) => (
-              <tr key={company.id} onClick={() => onOpenCompany(company.id)}>
+              <tr key={company.id}>
                 <td>
                   <div className="account-cell">
                     <span className="company-avatar">{initials(company.name)}</span>
@@ -396,6 +407,11 @@ function Customers({ onOpenCompany }) {
                     <span>{company.health_score}/100</span>
                   </div>
                 </td>
+                <td>
+                  <button type="button" className="row-action" onClick={() => onOpenCompany(company.id)}>
+                    Open
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -413,7 +429,7 @@ function CompanyDetail({ id, onBack, onOpenTicket }) {
 
   return (
     <section>
-      <button className="text-button" onClick={onBack}>← Back to customers</button>
+      <button type="button" className="text-button" onClick={onBack}>← Back to customers</button>
       <PageHeader
         eyebrow="Customer profile"
         title={data.company.name}

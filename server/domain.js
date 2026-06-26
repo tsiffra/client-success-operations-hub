@@ -1,7 +1,22 @@
 export const allowedStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+export const openStatuses = ['open', 'in_progress'];
+export const resolvedStatuses = ['resolved', 'closed'];
+export const highPriorities = ['high', 'critical'];
+
+export function isOpenStatus(status) {
+  return openStatuses.includes(status);
+}
+
+export function isResolvedStatus(status) {
+  return resolvedStatuses.includes(status);
+}
+
+export function isHighPriority(priority) {
+  return highPriorities.includes(String(priority).toLowerCase());
+}
 
 export function slaStatus(ticket) {
-  if (['resolved', 'closed'].includes(ticket.status)) return 'resolved';
+  if (isResolvedStatus(ticket.status)) return 'resolved';
   if (!ticket.sla_due_at) return 'within_sla';
 
   const dueAt = new Date(ticket.sla_due_at).getTime();

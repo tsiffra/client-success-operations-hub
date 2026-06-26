@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isHighPriority, isResolvedStatus } from './domain.js';
 import { initializeSchema, openDb } from './db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -148,16 +149,16 @@ function supportOwnerFor(queue, index) {
 }
 
 function slaDueAt(status, priority, index) {
-  if (['resolved', 'closed'].includes(status)) {
-    return addHours(isoDate(index % 180), priority.toLowerCase() === 'high' ? 8 : 24);
+  if (isResolvedStatus(status)) {
+    return addHours(isoDate(index % 180), isHighPriority(priority) ? 8 : 24);
   }
 
   const now = new Date();
   const pattern = index % 5;
   if (pattern === 0) return addHours(now.toISOString(), -6);
   if (pattern === 1) return addHours(now.toISOString(), 8);
-  if (priority.toLowerCase() === 'high' && pattern === 2) return addHours(now.toISOString(), -2);
-  return addHours(now.toISOString(), priority.toLowerCase() === 'high' ? 18 : 48);
+  if (isHighPriority(priority) && pattern === 2) return addHours(now.toISOString(), -2);
+  return addHours(now.toISOString(), isHighPriority(priority) ? 18 : 48);
 }
 
 function addHours(value, hours) {
@@ -205,7 +206,7 @@ function importTickets() {
       const priority = normalizePriority(get('priority'));
       const status = initialStatus(priority, index);
       const createdAt = isoDate(index % 180);
-      const closedAt = ['resolved', 'closed'].includes(status) ? isoDate((index % 180) - 2) : null;
+      const closedAt = isResolvedStatus(status) ? isoDate((index % 180) - 2) : null;
       const businessType = get('business_type');
       const queue = get('queue');
       const companyName = companyNameFor(businessType, index);
