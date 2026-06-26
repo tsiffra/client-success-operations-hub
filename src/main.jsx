@@ -534,7 +534,7 @@ function ActionCenter({ alerts }) {
         <div>
           <p className="eyebrow">Today</p>
           <h2>Action Center</h2>
-          <p>Start here during the demo: these alerts highlight SLA risk, account risk, and priority follow-up.</p>
+          <p>Prioritized alerts for urgent tickets, at-risk accounts, and upcoming follow-ups.</p>
         </div>
       </div>
       <div className="alert-grid">
